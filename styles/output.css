@@ -326,6 +326,9 @@
     border-style: var(--tw-border-style);
     border-width: 2px;
   }
+  .border-red-500 {
+    border-color: var(--color-red-500);
+  }
   .bg-black {
     background-color: var(--color-black);
   }
