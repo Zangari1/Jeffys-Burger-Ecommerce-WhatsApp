@@ -70,3 +70,11 @@ A ideia é simular um **ecommerce simples** que envia os pedidos diretamente par
 ## 📝 Observações  
 Este é um projeto em **andamento** e também uma forma de **aprender desenvolvimento web**.  
 Se tudo correr bem, será colocado em produção como um sistema de pedidos online funcional.
+
+---
+
+## 🎬 Créditos  
+
+Este projeto foi inspirado no tutorial do YouTube: (https://www.youtube.com/watch?v=FXm7Dfre60I&t=3603s).  
+Usei o vídeo como base para estruturar o projeto, mas fiz alterações e estou implementando melhorias próprias para me aprimorar no desenvolvimento web.
+
