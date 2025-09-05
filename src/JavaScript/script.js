@@ -11,27 +11,40 @@ const addressWarn = document.getElementById("address-warn")
 
 let cart = [];
 
+// Abre modal do carrinho
 cartbtn.addEventListener("click", function(){
     updateCartModal();
     cartModal.style.display = "flex"
 })
 
+// Fecha clicando fora do modal
 cartModal.addEventListener("click", function(event){
     if(event.target === cartModal){
         cartModal.style.display = "none"
     }
 })
 
+// Fecha no botão fechar
 closeModalBtn.addEventListener("click", function(){
     cartModal.style.display = "none"
 })
 
+// Adiciona item ao carrinho
 menu.addEventListener("click", function(event){
     let parentButton = event.target.closest(".add-to-cart-btn")
     if(parentButton){
         const name = parentButton.getAttribute("data-name")
         const price = parseFloat(parentButton.getAttribute("data-price"))
         addToCart(name, price)
+
+        // ✅ Toast de confirmação
+        Toastify({
+            text: `${name} adicionado ao carrinho!`,
+            duration: 2000,
+            gravity: "top",
+            position: "right",
+            style: { background: "#22c55e" }
+        }).showToast()
     }
 })
 
@@ -41,17 +54,10 @@ function addToCart(name, price){
     if(existingItem){
         existingItem.quantity += 1;
     }else{
-
-        cart.push({
-        name,
-        price,
-        quantity: 1,
-        }) 
-
+        cart.push({ name, price, quantity: 1 })
     }
 
     updateCartModal();
-
 }
 
 function updateCartModal(){
@@ -60,88 +66,103 @@ function updateCartModal(){
 
     cart.forEach(item => {
         const cartItemElement = document.createElement("div");
-        cartItemElement.classList.add("flex", "justify-between", "mb-4", "flex-col" )
+        cartItemElement.classList.add(
+            "flex", 
+            "items-center", 
+            "justify-between", 
+            "border-b", 
+            "border-gray-300", 
+            "pb-2", 
+            "mb-2"
+        )
         
         cartItemElement.innerHTML = `
-        <div class="flex items-center justify-between">
-            <div>
+            <!-- Nome do produto -->
+            <div class="w-1/3">
                 <p class="font-medium">${item.name}</p>
-                <p>Qtd: ${item.quantity}</p>
-                <p class="font-medium mt-2">R$ ${item.price.toFixed(2)}</p>
+                <p class="text-sm text-gray-500">R$ ${item.price.toFixed(2)} un.</p>
             </div>
 
-                <button class="remove-from-cart-btn cursor-pointer" data-name="${item.name}">
-                    Remover
-                </button>
-        </div>
+            <!-- Controles de quantidade -->
+            <div class="flex items-center gap-2 w-1/3 justify-center">
+                <button class="decrease-qty px-2 bg-red-500 text-white rounded" data-name="${item.name}">-</button>
+                <span class="font-medium">${item.quantity}</span>
+                <button class="increase-qty px-2 bg-green-500 text-white rounded" data-name="${item.name}">+</button>
+            </div>
+
+            <!-- Subtotal -->
+            <div class="w-1/3 text-right font-semibold">
+                R$ ${(item.price * item.quantity).toFixed(2)}
+            </div>
         `
 
         total += item.price * item.quantity;
-
         cartItemsContainer.appendChild(cartItemElement)
     })
 
+    // Total formatado
     cartTotal.textContent = total.toLocaleString("pt-BR", {
         style: "currency",
         currency: "BRL"
     });
 
-    cartCounter.innerHTML = cart.length;
-
+    // contador mostra total de unidades
+    cartCounter.innerHTML = cart.reduce((sum, item) => sum + item.quantity, 0)
 }
 
+// Eventos para botões de + e -
 cartItemsContainer.addEventListener("click", function(event){
-    if(event.target.classList.contains("remove-from-cart-btn")){
-        const name = event.target.getAttribute("data-name")
+    const name = event.target.getAttribute("data-name")
 
-        removeItemCart(name);
+    if(event.target.classList.contains("increase-qty")){
+        increaseQty(name)
     }
 
-
+    if(event.target.classList.contains("decrease-qty")){
+        decreaseQty(name)
+    }
 })
 
-function removeItemCart(name){
-    const index = cart.findIndex(item => item.name === name);
-
-    if(index !== -1){
-        const item = cart[index];
-
-        if(item.quantity > 1){
-            item.quantity -=1;
-            updateCartModal();
-            return;
-        }
-
-        cart.splice(index, 1);
-        updateCartModal();
-
+function increaseQty(name){
+    const item = cart.find(i => i.name === name)
+    if(item){
+        item.quantity += 1
+        updateCartModal()
     }
 }
 
-addressInput.addEventListener("input", function(event){
-    let inputValue = event.target.value;
+function decreaseQty(name){
+    const item = cart.find(i => i.name === name)
+    if(item){
+        if(item.quantity > 1){
+            item.quantity -= 1
+        } else {
+            cart = cart.filter(i => i.name !== name) // remove item se chegar a 0
+        }
+        updateCartModal()
+    }
+}
 
-    if(inputValue !== ""){
+// Validação do endereço
+addressInput.addEventListener("input", function(event){
+    if(event.target.value !== ""){
         addressInput.classList.remove("border-red-500")
         addressWarn.classList.add("hidden")
     }
-
 })
 
+// Finalizar compra
 checkoutBtn.addEventListener("click", function(){
-
     const isOpen = checkRestaurantOpen();
     if(!isOpen){
         Toastify({
             text: "Ops, o restaurante está fechado!",
             duration: 3000,
             close: true,
-            gravity: "top", // `top` or `bottom`
-            position: "right", // `left`, `center` or `right`
-            stopOnFocus: true, // Prevents dismissing of toast on hover
-            style: {
-                background: "#ef4444",
-            },
+            gravity: "top",
+            position: "right",
+            stopOnFocus: true,
+            style: { background: "#ef4444" },
         }).showToast();
         return;
     }
@@ -153,22 +174,20 @@ checkoutBtn.addEventListener("click", function(){
         return;
     }
 
-    const cartItems = cart.map((item) =>{
-        return(
-            ` ${item.name} Quantidade: (${item.quantity}) Preço: R$${item.price} |`
-        )
-    }).join("")
+    const cartItems = cart.map(item =>
+        `${item.name} Quantidade: (${item.quantity}) Preço: R$${item.price}`
+    ).join(" | ")
 
     const message = encodeURIComponent(cartItems)
-    const phone = "1199999-9999"
+    const phone = "11999999999"
 
     window.open(`https://wa.me/${phone}?text=${message} Endereço: ${addressInput.value}`, "_blank")
 
     cart = [];
     updateCartModal();
-
 })
 
+// Função de horário de funcionamento
 function checkRestaurantOpen(){
     const data = new Date();
     const hora = data.getHours();
